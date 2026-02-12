@@ -1,7 +1,7 @@
 import { AsyncPipe, CurrencyPipe, DatePipe, NgFor, NgIf } from '@angular/common';
 import { Component, effect, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { catchError, debounceTime, map, of, startWith, Subject, switchMap, tap } from 'rxjs';
+import { catchError, debounceTime, finalize, map, of, startWith, Subject, switchMap, tap } from 'rxjs';
 
 import { CatalogApiService } from '../core/catalog-api.service';
 import { CategoryDto, ProductDto, ProductSearchResponse } from '../core/models';
@@ -39,8 +39,8 @@ import { CategoryDto, ProductDto, ProductSearchResponse } from '../core/models';
       <div *ngIf="loading()" class="card">Loading…</div>
       <div *ngIf="error()" class="card card--error">{{ error() }}</div>
 
-      <div *ngIf="!loading() && !error()" class="card">
-        <div class="table-wrap" *ngIf="(vm$ | async) as vm">
+      <div class="card" *ngIf="(vm$ | async) as vm">
+        <div class="table-wrap">
           <div class="table-meta">
             <div class="muted">Total: {{ vm.total }}</div>
             <div class="pager">
@@ -56,7 +56,7 @@ import { CategoryDto, ProductDto, ProductSearchResponse } from '../core/models';
             </div>
           </div>
 
-          <table class="table">
+          <table class="table" *ngIf="!error()">
             <thead>
               <tr>
                 <th>Name</th>
@@ -220,10 +220,10 @@ export class ProductListPage {
           catchError((err) => {
             this.error.set(err?.message ?? 'Failed to load products');
             return of({ items: [], total: 0, page: 1, pageSize: this.pageSize() } satisfies ProductSearchResponse);
-          })
+          }),
+          finalize(() => this.loading.set(false))
         )
     ),
-    tap(() => this.loading.set(false)),
     map((resp) => ({ items: resp.items, total: resp.total }))
   );
 

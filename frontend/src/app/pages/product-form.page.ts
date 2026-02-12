@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { catchError, finalize, of, switchMap, tap } from 'rxjs';
+import { catchError, finalize, of, switchMap, take, tap } from 'rxjs';
 
 import { CatalogApiService } from '../core/catalog-api.service';
 import { CategoryDto, CreateProductRequest, ProductDto } from '../core/models';
@@ -178,9 +178,12 @@ export class ProductFormPage {
     this.api
       .listCategories()
       .pipe(
-        catchError(() => of([] as CategoryDto[])),
+        catchError((err) => {
+          this.error.set(err?.message ?? 'Failed to load categories');
+          return of([] as CategoryDto[]);
+        }),
         tap((items) => this.categories.set(items)),
-        switchMap(() => this.route.paramMap),
+        switchMap(() => this.route.paramMap.pipe(take(1))),
         tap((params) => this.id.set(params.get('id'))),
         switchMap((params) => {
           const id = params.get('id');

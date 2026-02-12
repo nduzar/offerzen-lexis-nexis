@@ -9,7 +9,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("frontend", policy =>
     {
         policy
-            .WithOrigins("http://localhost:4200")
+            .WithOrigins("http://localhost:4200", "http://localhost:4201")
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
@@ -33,7 +33,10 @@ app.UseMiddleware<ProductCatalog.Api.Middleware.RequestCorrelationMiddleware>();
 
 app.UseCors("frontend");
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 await app.Services.SeedAsync();
 
